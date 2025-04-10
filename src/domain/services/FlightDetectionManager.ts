@@ -3,6 +3,7 @@ import { SettingsRepository } from '../../data/repositories/SettingsRepository';
 import { FlightApiRepository } from '../../data/repositories/FlightApiRepository';
 import { FlightRepository } from '../../data/repositories/FlightRepository';
 import { FlightDetector } from './FlightDetector';
+import { NotificationManager } from './NotificationManager';
 import { Flight } from '../models';
 
 export class FlightDetectionError extends AppError {
@@ -31,6 +32,7 @@ export class FlightDetectionManager implements IFlightDetectionManager {
   private locationManager: LocationManager;
   private settingsRepository: SettingsRepository;
   private flightRepository: FlightRepository;
+  private notificationManager?: NotificationManager;
   private detectionActive = false;
 
   private constructor(
@@ -38,19 +40,22 @@ export class FlightDetectionManager implements IFlightDetectionManager {
     backgroundTaskManager: BackgroundTaskManager,
     locationManager: LocationManager,
     settingsRepository: SettingsRepository,
-    flightRepository: FlightRepository
+    flightRepository: FlightRepository,
+    notificationManager?: NotificationManager
   ) {
     this.flightDetector = flightDetector;
     this.backgroundTaskManager = backgroundTaskManager;
     this.locationManager = locationManager;
     this.settingsRepository = settingsRepository;
     this.flightRepository = flightRepository;
+    this.notificationManager = notificationManager;
   }
 
   public static getInstance(
     flightApiRepository?: FlightApiRepository,
     settingsRepository?: SettingsRepository,
-    flightRepository?: FlightRepository
+    flightRepository?: FlightRepository,
+    notificationManager?: NotificationManager
   ): FlightDetectionManager {
     if (!FlightDetectionManager.instance) {
       if (!flightApiRepository || !settingsRepository || !flightRepository) {
@@ -66,7 +71,8 @@ export class FlightDetectionManager implements IFlightDetectionManager {
         backgroundTaskManager,
         locationManager,
         settingsRepository,
-        flightRepository
+        flightRepository,
+        notificationManager
       );
       
       // Register the detection task
@@ -74,6 +80,15 @@ export class FlightDetectionManager implements IFlightDetectionManager {
     }
     
     return FlightDetectionManager.instance;
+  }
+
+  /**
+   * Set the notification manager
+   * @param manager The notification manager instance
+   */
+  public setNotificationManager(manager: NotificationManager): void {
+    this.notificationManager = manager;
+    this.logger.info('Notification manager set');
   }
 
   /**
@@ -144,6 +159,11 @@ export class FlightDetectionManager implements IFlightDetectionManager {
       // Save detected flights to history
       if (detectedFlights.length > 0) {
         await this.flightRepository.saveFlights(detectedFlights);
+        
+        // Send notifications for newly detected flights if notification manager is available
+        if (this.notificationManager) {
+          await this.notificationManager.notifyFlightsDetected(detectedFlights);
+        }
       }
       
       return detectedFlights;
@@ -176,9 +196,6 @@ export class FlightDetectionManager implements IFlightDetectionManager {
         const detectedFlights = await this.performDetection();
         
         this.logger.info(`Background detection found ${detectedFlights.length} flights`);
-        
-        // TODO: Trigger notifications for detected flights
-        // This will be implemented in Phase 4
         
         return Promise.resolve();
       } catch (error) {
