@@ -2,6 +2,9 @@
  * Flight Overhead Notification App
  */
 
+// Import polyfill first to patch global objects before other imports
+import './src/core/utils/HermesPolyfill';
+
 import React from 'react';
 import {
   SafeAreaView,
