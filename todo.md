@@ -67,30 +67,30 @@
 ## Phase 3: Flight API Integration
 
 ### API Client
-- [ ] Research and document OpenSky Network API
-- [ ] Create API response models
-- [ ] Implement mappers from API to domain models
-- [ ] Create FlightApiService with Axios
-- [ ] Implement rate limiting and error handling
-- [ ] Create FlightApiRepository
-- [ ] Write API client unit tests
+- [x] Research and document OpenSky Network API
+- [x] Create API response models
+- [x] Implement mappers from API to domain models
+- [x] Create FlightApiService with Axios
+- [x] Implement rate limiting and error handling
+- [x] Create FlightApiRepository
+- [x] Write API client unit tests
 
 ### Flight Detection
-- [ ] Create FlightDetector with overhead flight detection
-- [ ] Implement distance calculation algorithm
-- [ ] Add flight filtering based on radius
-- [ ] Create detection history tracking
-- [ ] Implement FlightDetectionManager
-- [ ] Create worker for periodic detection
-- [ ] Write flight detection unit tests
+- [x] Create FlightDetector with overhead flight detection
+- [x] Implement distance calculation algorithm
+- [x] Add flight filtering based on radius
+- [x] Create detection history tracking
+- [x] Implement FlightDetectionManager
+- [x] Create worker for periodic detection
+- [x] Write flight detection unit tests
 
 ### API Caching
-- [ ] Create CacheService interface
-- [ ] Implement caching with AsyncStorage
-- [ ] Add cache expiration and validation
-- [ ] Enhance FlightApiRepository with caching
-- [ ] Create CacheManager for maintenance
-- [ ] Write caching system unit tests
+- [x] Create CacheService interface
+- [x] Implement caching with AsyncStorage
+- [x] Add cache expiration and validation
+- [x] Enhance FlightApiRepository with caching
+- [x] Create CacheManager for maintenance
+- [x] Write caching system unit tests
 
 ## Phase 4: Notification System
 

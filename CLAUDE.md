@@ -19,6 +19,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Variables/functions**: camelCase
 - **Constants**: UPPER_SNAKE_CASE
 - **Imports**: Group by source, named exports preferred
-- **Testing**: Jest with describe/it blocks, clear descriptions
+- **Testing**: Jest with describe/it blocks, clear descriptions. Never use if/else or contingency; tests should always be deterministic.
 - **Components**: Use TypeScript React FC type
 - **Error handling**: Always log errors and provide recovery options

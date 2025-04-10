@@ -15,4 +15,5 @@ export interface Flight {
   latitude: number;
   longitude: number;
   timestamp: number; // Unix timestamp
+  isOnGround?: boolean; // Whether the aircraft is on the ground
 }
