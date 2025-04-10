@@ -29,18 +29,32 @@ export class LocationService implements ILocationService {
   private errorHandler = new ErrorHandler();
   private watchId: number | null = null;
   private settingsRepository: SettingsRepository;
+  private isConfigured = false;
 
   constructor(settingsRepository: SettingsRepository) {
     this.settingsRepository = settingsRepository;
-    // Configure geolocation
-    Geolocation.setRNConfiguration({
-      skipPermissionRequests: false,
-      authorizationLevel: 'whenInUse',
-      locationProvider: 'auto',
-    });
+  }
+  
+  // Configure geolocation lazily instead of in the constructor
+  private configureGeolocation(): void {
+    if (this.isConfigured) return;
+    
+    try {
+      Geolocation.setRNConfiguration({
+        skipPermissionRequests: false,
+        authorizationLevel: 'whenInUse',
+        locationProvider: 'auto',
+      });
+      this.isConfigured = true;
+    } catch (error) {
+      this.logger.error('Failed to configure geolocation', { error });
+      // Continue without throwing to allow app to run with degraded functionality
+    }
   }
 
   async requestPermissions(): Promise<boolean> {
+    this.configureGeolocation();
+    
     try {
       return new Promise<boolean>((resolve) => {
         Geolocation.requestAuthorization(
@@ -64,6 +78,8 @@ export class LocationService implements ILocationService {
   }
 
   async getCurrentLocation(): Promise<LocationCoordinates> {
+    this.configureGeolocation();
+    
     try {
       return new Promise<LocationCoordinates>((resolve, reject) => {
         Geolocation.getCurrentPosition(
@@ -92,6 +108,8 @@ export class LocationService implements ILocationService {
   }
 
   startLocationUpdates(callback: LocationCallback): void {
+    this.configureGeolocation();
+    
     if (this.watchId !== null) {
       this.stopLocationUpdates();
     }

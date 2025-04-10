@@ -20,6 +20,17 @@ export interface IBackgroundTaskManager {
 
 export type BackgroundTask = () => Promise<void>;
 
+// Helper function to load BackgroundFetch module only when needed
+// This helps prevent early initialization issues with Hermes
+const getBackgroundFetchModule = () => {
+  try {
+    return require('react-native-background-fetch');
+  } catch (error) {
+    console.error('Failed to load BackgroundFetch module', error);
+    return null;
+  }
+};
+
 export class BackgroundTaskManager implements IBackgroundTaskManager {
   private static instance: BackgroundTaskManager;
   private logger = new Logger('BackgroundTaskManager');
@@ -38,10 +49,19 @@ export class BackgroundTaskManager implements IBackgroundTaskManager {
     return BackgroundTaskManager.instance;
   }
 
+  private getBackgroundFetch() {
+    return getBackgroundFetchModule();
+  }
+
   public async initialize(): Promise<void> {
     if (this.initialized) return;
 
     try {
+      const BackgroundFetch = this.getBackgroundFetch();
+      if (!BackgroundFetch) {
+        throw new Error('BackgroundFetch module not available');
+      }
+
       // Configure the library
       const status = await BackgroundFetch.configure(
         {
@@ -78,7 +98,10 @@ export class BackgroundTaskManager implements IBackgroundTaskManager {
         (taskId) => {
           // Task timeout handling
           this.logger.warn(`Background task timed out: ${taskId}`);
-          BackgroundFetch.finish(taskId);
+          const BackgroundFetch = this.getBackgroundFetch();
+          if (BackgroundFetch) {
+            BackgroundFetch.finish(taskId);
+          }
         }
       );
 
@@ -98,6 +121,11 @@ export class BackgroundTaskManager implements IBackgroundTaskManager {
   public async scheduleLocationUpdates(intervalMinutes: number): Promise<boolean> {
     try {
       await this.initialize();
+
+      const BackgroundFetch = this.getBackgroundFetch();
+      if (!BackgroundFetch) {
+        return false;
+      }
 
       // Ensure intervalMinutes is at least 15 (minimum allowed by iOS)
       const safeInterval = Math.max(15, intervalMinutes);
@@ -136,6 +164,11 @@ export class BackgroundTaskManager implements IBackgroundTaskManager {
         return;
       }
 
+      const BackgroundFetch = this.getBackgroundFetch();
+      if (!BackgroundFetch) {
+        return;
+      }
+
       await BackgroundFetch.stop(this.locationTaskId);
       this.logger.info('Location updates canceled');
     } catch (error) {
@@ -149,6 +182,11 @@ export class BackgroundTaskManager implements IBackgroundTaskManager {
   public async scheduleFlightCheck(): Promise<boolean> {
     try {
       await this.initialize();
+
+      const BackgroundFetch = this.getBackgroundFetch();
+      if (!BackgroundFetch) {
+        return false;
+      }
 
       // Register the task
       const status = await BackgroundFetch.scheduleTask({
@@ -183,6 +221,11 @@ export class BackgroundTaskManager implements IBackgroundTaskManager {
         await this.initialize();
       }
 
+      const BackgroundFetch = this.getBackgroundFetch();
+      if (!BackgroundFetch) {
+        return false;
+      }
+
       const status = await BackgroundFetch.status();
       return status === BackgroundFetch.STATUS_AVAILABLE;
     } catch (error) {
@@ -200,6 +243,11 @@ export class BackgroundTaskManager implements IBackgroundTaskManager {
   }
 
   private getStatusName(status: BackgroundFetchStatus): string {
+    const BackgroundFetch = this.getBackgroundFetch();
+    if (!BackgroundFetch) {
+      return `UNKNOWN (${status})`;
+    }
+    
     switch (status) {
       case BackgroundFetch.STATUS_AVAILABLE:
         return 'AVAILABLE';
