@@ -216,3 +216,36 @@ FlightLog {
 - Battery consumption will be higher than typical apps due to location tracking
 - Background processing restrictions on iOS may limit detection frequency
 - Stock photos may not match exact livery/airline branding of actual aircraft
+
+## 10. Current Implementation Details
+
+### 10.1 Notification System
+
+#### Basic Notifications
+- NotificationService handles platform-specific notification setup using react-native-notifications
+- Flight notifications include title, body, sound, and badge
+- Notification content is formatted based on flight info (type, altitude, speed, route)
+- Throttling implemented to prevent notification spam
+
+#### Rich Notifications
+- Enhanced with images of the aircraft type
+- Images are downloaded, cached, and used in notifications
+- Different image handling for iOS and Android
+
+#### Notification Actions
+- Notification actions defined: VIEW_DETAILS, SHOW_HISTORY, DISMISS
+- Action buttons added to notifications
+- DeepLinkHandler created for navigation from notifications
+- Notifications register tap and action handlers
+- Navigation will be integrated in Phase 6 when UI is implemented
+
+### 10.2 Deep Linking
+- DeepLinkHandler class implemented to manage deep links
+- Support for multiple deep link types:
+  - FLIGHT_DETAILS - Shows details for a specific flight
+  - FLIGHT_HISTORY - Shows flight history
+  - SETTINGS - Opens settings screen
+  - DASHBOARD - Goes to main dashboard
+- URL structure: flightoverhead://[screen]?[params]
+- Deep link registration during app initialization
+- Navigation function registration for UI implementation

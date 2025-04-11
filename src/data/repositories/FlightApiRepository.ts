@@ -2,7 +2,7 @@ import { Flight } from '../../domain/models';
 import { FlightApiService, OpenSkyState, ApiError } from '../services/FlightApiService';
 import { CacheService } from '../services/CacheService';
 import { FlightMapper } from '../mappers';
-import { ErrorHandler, Logger } from '../../core/utils';
+import { DevToast, ErrorHandler, Logger } from '../../core/utils';
 
 // Cache expiration times
 const NEARBY_AIRCRAFT_CACHE_EXPIRY_MS = 60 * 1000; // 1 minute
@@ -85,6 +85,9 @@ export class FlightApiRepository implements IFlightApiRepository {
 
       // Cache the result
       await this.cacheService.cacheData(cacheKey, filteredFlights, NEARBY_AIRCRAFT_CACHE_EXPIRY_MS);
+
+      // Show detailed toast information about the flights for development
+      DevToast.showNearbyFlights(filteredFlights, { latitude, longitude });
 
       this.logger.info(`Retrieved ${filteredFlights.length} nearby aircraft from API`);
       return filteredFlights;

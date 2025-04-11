@@ -1,6 +1,6 @@
 import { Flight } from '../models';
 import { FlightApiRepository } from '../../data/repositories/FlightApiRepository';
-import { AppError, ErrorHandler, Logger } from '../../core/utils';
+import { AppError, DevToast, ErrorHandler, Logger } from '../../core/utils';
 
 export class FlightDetectionError extends AppError {
   constructor(message: string, originalError?: Error) {
@@ -54,6 +54,20 @@ export class FlightDetector implements IFlightDetector {
       this.lastDetectionTime = Date.now();
       
       this.logger.info(`Detected ${nearbyAircraft.length} nearby aircraft, ${newDetections.length} new`);
+      
+      // If there are new detections, show a toast with details
+      if (newDetections.length > 0) {
+        DevToast.show(`NEW DETECTIONS: ${newDetections.length} aircraft`);
+        
+        // Show details for each new flight (with delayed timing)
+        setTimeout(() => {
+          newDetections.forEach((flight, index) => {
+            setTimeout(() => {
+              DevToast.showFlightDetails(flight);
+            }, index * 3000); // 3 second delay between each flight
+          });
+        }, 1000);
+      }
       
       return newDetections;
     } catch (error) {

@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Code Style
 - **Architecture**: Clean architecture (domain/data/presentation)
-- **Types**: Strong typing with explicit interfaces
+- **Types**: Strong typing with explicit interfaces; don't use `any` or unsafe casts.
 - **Error handling**: Use AppError hierarchy with context
 - **Classes**: PascalCase, one per file
 - **Variables/functions**: camelCase

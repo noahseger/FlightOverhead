@@ -1,7 +1,14 @@
-import { Notifications, Notification, NotificationCompletion } from 'react-native-notifications';
+import { Notifications, Notification, NotificationCompletion, NotificationAction } from 'react-native-notifications';
 import { Platform } from 'react-native';
 import { Flight } from '../../domain/models';
-import { AppError, ErrorHandler, Logger, PermissionManager } from '../../core/utils';
+import { 
+  AppError, 
+  ErrorHandler, 
+  Logger, 
+  PermissionManager, 
+  DeepLinkHandler, 
+  DeepLinkType 
+} from '../../core/utils';
 
 export class NotificationError extends AppError {
   constructor(message: string, originalError?: Error) {
@@ -10,12 +17,19 @@ export class NotificationError extends AppError {
   }
 }
 
+export enum NotificationActionType {
+  VIEW_DETAILS = 'view_details',
+  SHOW_HISTORY = 'show_history',
+  DISMISS = 'dismiss'
+}
+
 export interface INotificationService {
   requestPermissions(): Promise<boolean>;
   showFlightNotification(flight: Flight, imagePath?: string | null): Promise<string>;
   cancelNotification(id: string): Promise<void>;
   cancelAllNotifications(): Promise<void>;
   setupNotifications(): Promise<void>;
+  handleNotificationAction(action: NotificationAction): Promise<boolean>;
 }
 
 export class NotificationService implements INotificationService {
@@ -23,11 +37,13 @@ export class NotificationService implements INotificationService {
   private logger = new Logger('NotificationService');
   private errorHandler = new ErrorHandler();
   private permissionManager: PermissionManager;
+  private deepLinkHandler: DeepLinkHandler;
   private initialized = false;
   private sentNotifications: Set<string> = new Set();
   
   private constructor(permissionManager: PermissionManager) {
     this.permissionManager = permissionManager;
+    this.deepLinkHandler = DeepLinkHandler.getInstance();
   }
   
   public static getInstance(permissionManager?: PermissionManager): NotificationService {
@@ -75,8 +91,29 @@ export class NotificationService implements INotificationService {
       Notifications.events().registerNotificationOpened(
         (notification: Notification, completion: () => void) => {
           this.logger.info('Notification opened', { notification });
-          // TODO: Handle navigation to flight details when UI is implemented
+          
+          // Navigate to flight details when notification is tapped
+          if (notification.payload?.data?.flightId) {
+            this.handleNotificationTap(notification).catch(error => {
+              this.logger.error('Error handling notification tap', { error });
+            });
+          }
+          
           completion();
+        }
+      );
+      
+      // Register for notification actions (buttons)
+      Notifications.events().registerNotificationActionReceived(
+        (action: NotificationAction) => {
+          this.logger.info('Notification action received', { 
+            action: action.identifier,
+            notification: action.notification
+          });
+          
+          this.handleNotificationAction(action).catch(error => {
+            this.logger.error('Error handling notification action', { error });
+          });
         }
       );
       
@@ -101,6 +138,34 @@ export class NotificationService implements INotificationService {
       this.errorHandler.handleError(
         new NotificationError('Failed to set up notifications', error as Error)
       );
+    }
+  }
+  
+  /**
+   * Handle notification tap by navigating to flight details
+   * @param notification The notification that was tapped
+   * @returns Promise resolving to true if handled successfully
+   */
+  private async handleNotificationTap(notification: Notification): Promise<boolean> {
+    try {
+      const flightId = notification.payload?.data?.flightId;
+      
+      if (!flightId) {
+        this.logger.warn('Notification tap missing flight ID', { notification });
+        return false;
+      }
+      
+      // Use DeepLinkHandler to navigate to flight details
+      return await this.deepLinkHandler.navigateToScreen({
+        type: DeepLinkType.FLIGHT_DETAILS,
+        params: { flightId }
+      });
+    } catch (error) {
+      this.logger.error('Error handling notification tap', { error });
+      this.errorHandler.handleError(
+        new NotificationError('Failed to handle notification tap', error as Error)
+      );
+      return false;
     }
   }
   
@@ -148,6 +213,32 @@ export class NotificationService implements INotificationService {
         },
       };
       
+      // Add notification actions (buttons)
+      notification.actions = [
+        {
+          identifier: NotificationActionType.VIEW_DETAILS,
+          title: 'View Details',
+          authenticationRequired: false,
+          textInput: false,
+          foreground: true,
+        },
+        {
+          identifier: NotificationActionType.SHOW_HISTORY,
+          title: 'Flight History',
+          authenticationRequired: false,
+          textInput: false,
+          foreground: true,
+        },
+        {
+          identifier: NotificationActionType.DISMISS,
+          title: 'Dismiss',
+          authenticationRequired: false,
+          textInput: false,
+          foreground: false,
+          destructive: true,
+        },
+      ];
+      
       // Add aircraft image if available and platform is supported
       if (imagePath) {
         this.logger.debug('Adding image to notification', { flightId: flight.id, imagePath });
@@ -172,6 +263,9 @@ export class NotificationService implements INotificationService {
               },
             },
           ];
+          
+          // Setup action category for iOS
+          notification.ios.category = 'flight_notification';
         } else {
           // For unsupported platforms, log a warning but continue without the image
           this.logger.warn('Rich notifications with images not supported on this platform');
@@ -201,6 +295,55 @@ export class NotificationService implements INotificationService {
         new NotificationError('Failed to show flight notification', error as Error)
       );
       throw new NotificationError('Failed to show flight notification', error as Error);
+    }
+  }
+  
+  /**
+   * Handle notification action button presses
+   * @param action The notification action that was triggered
+   * @returns Promise resolving to true if handled successfully
+   */
+  public async handleNotificationAction(action: NotificationAction): Promise<boolean> {
+    try {
+      const notification = action.notification;
+      const flightId = notification.payload?.data?.flightId;
+      
+      if (!flightId) {
+        this.logger.warn('Notification action missing flight ID', { action });
+        return false;
+      }
+      
+      // Handle different action types
+      switch (action.identifier) {
+        case NotificationActionType.VIEW_DETAILS:
+          // Navigate to flight details screen
+          return await this.deepLinkHandler.navigateToScreen({
+            type: DeepLinkType.FLIGHT_DETAILS,
+            params: { flightId }
+          });
+          
+        case NotificationActionType.SHOW_HISTORY:
+          // Navigate to flight history screen
+          return await this.deepLinkHandler.navigateToScreen({
+            type: DeepLinkType.FLIGHT_HISTORY,
+            params: {}
+          });
+          
+        case NotificationActionType.DISMISS:
+          // Just dismiss the notification (already handled by the system)
+          this.logger.debug('Notification dismissed', { flightId });
+          return true;
+          
+        default:
+          this.logger.warn('Unknown notification action', { actionId: action.identifier });
+          return false;
+      }
+    } catch (error) {
+      this.logger.error('Error handling notification action', { error, action });
+      this.errorHandler.handleError(
+        new NotificationError('Failed to handle notification action', error as Error)
+      );
+      return false;
     }
   }
   
