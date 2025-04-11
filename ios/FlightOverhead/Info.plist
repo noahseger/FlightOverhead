@@ -33,7 +33,15 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Flight Overhead needs your location to detect aircraft flying near you.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Flight Overhead needs background location access to detect aircraft while the app is in the background.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Flight Overhead needs background location access to detect aircraft while the app is in the background.</string>
+	
+	<!-- Notification Permission -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>Flight Overhead uses notifications to alert you when aircraft are overhead.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

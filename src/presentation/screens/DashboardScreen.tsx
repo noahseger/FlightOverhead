@@ -96,11 +96,22 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         )}
       </ScrollView>
       
+      {/* Settings and Debug FABs */}
       <FAB
         style={styles.fab}
         icon="cog"
         onPress={() => navigation.navigate('Settings')}
       />
+      
+      {/* Debug FAB - only visible in development */}
+      {__DEV__ && (
+        <FAB
+          style={styles.debugFab}
+          icon="bug"
+          onPress={() => navigation.navigate('Debug')}
+          small
+        />
+      )}
     </View>
   );
 };
@@ -165,6 +176,13 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
+  },
+  debugFab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 80,
+    backgroundColor: '#f44336',
   },
 });
 

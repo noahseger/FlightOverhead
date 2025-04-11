@@ -4,12 +4,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar, useColorScheme } from 'react-native';
 import { RootStackParamList } from './types';
 
-// Import screens as they're implemented
-// Placeholder components until real screens are implemented
+// Import screens
 import DashboardScreen from '../screens/DashboardScreen';
 import FlightDetailsScreen from '../screens/FlightDetailsScreen';
 import FlightHistoryScreen from '../screens/FlightHistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import DebugScreen from '../screens/DebugScreen';
 
 // Import theme and styling
 import { Colors } from 'react-native/Libraries/NewAppScreen';
@@ -77,6 +77,14 @@ const AppNavigator: React.FC = () => {
           component={SettingsScreen}
           options={{ title: 'Settings' }}
         />
+        {/* Debug screen - only visible in development mode */}
+        {__DEV__ && (
+          <Stack.Screen
+            name="Debug"
+            component={DebugScreen}
+            options={{ title: 'Debug Tools' }}
+          />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

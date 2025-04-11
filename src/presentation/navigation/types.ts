@@ -8,6 +8,7 @@ export type RootStackParamList = {
   FlightDetails: { flightId: string };
   FlightHistory: undefined;
   Settings: undefined;
+  Debug: undefined; // Debug screen for development
 };
 
 /**
@@ -29,6 +30,11 @@ export type FlightHistoryScreenProps = StackScreenProps<RootStackParamList, 'Fli
  * Type for settings screen props
  */
 export type SettingsScreenProps = StackScreenProps<RootStackParamList, 'Settings'>;
+
+/**
+ * Type for debug screen props
+ */
+export type DebugScreenProps = StackScreenProps<RootStackParamList, 'Debug'>;
 
 /**
  * Navigation utility type for accessing navigation object

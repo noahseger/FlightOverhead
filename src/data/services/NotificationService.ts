@@ -128,7 +128,10 @@ export class NotificationService implements INotificationService {
           enableVibration: true,
           lightColor: '#0000FF',
           soundFile: 'default',
+          showBadge: true, // Show badge count
         });
+        
+        this.logger.info('Created Android notification channel: flight-overhead-channel');
       }
       
       this.initialized = true;
@@ -206,7 +209,7 @@ export class NotificationService implements INotificationService {
           channelId: 'flight-overhead-channel',
           autoCancel: true,
           ongoing: false,
-          smallIcon: 'ic_notification',
+          smallIcon: 'ic_notification', // References drawable/ic_notification.xml
         },
         ios: {
           threadId: 'flight-notifications',

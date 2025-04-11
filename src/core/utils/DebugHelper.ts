@@ -2,6 +2,9 @@ import { DevToast } from './DevToast';
 import { FlightApiRepository } from '../../data/repositories/FlightApiRepository';
 import { FlightDetector } from '../../domain/services/FlightDetector';
 import { AircraftImageService } from '../../data/services/AircraftImageService';
+import { NotificationService } from '../../data/services/NotificationService';
+import { PermissionManager } from './PermissionManager';
+import { Flight } from '../../domain/models';
 
 /**
  * Helper for debugging and development
@@ -132,6 +135,84 @@ export class DebugHelper {
     } catch (error) {
       console.error('Error testing aircraft image service:', error);
       DevToast.show(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  /**
+   * Test notifications by showing a sample flight notification
+   */
+  public static async testNotification(): Promise<void> {
+    try {
+      DevToast.show('Testing notification...');
+      
+      // Get permission manager instance
+      const permissionManager = PermissionManager.getInstance();
+      
+      // Check if notification permission is already granted
+      let hasPermission = await permissionManager.checkNotificationPermission();
+      
+      if (!hasPermission) {
+        DevToast.show('Requesting notification permission...');
+        // Request notification permission explicitly
+        hasPermission = await permissionManager.requestNotificationPermission();
+        
+        if (!hasPermission) {
+          DevToast.show('Notification permission denied. Cannot show test notification.');
+          // Try to open settings to let user enable notifications
+          DevToast.show('Opening app settings. Please enable notifications and try again.');
+          await permissionManager.openAppSettings();
+          return;
+        }
+      }
+      
+      DevToast.show('Notification permission granted! Showing test notification...');
+      
+      // Create notification service
+      const notificationService = NotificationService.getInstance(permissionManager);
+      
+      // Set up notifications
+      await notificationService.setupNotifications();
+      
+      // Create a sample flight for notification
+      const sampleFlight: Flight = {
+        id: 'test-flight-' + Date.now(),
+        flightNumber: 'UA123',
+        aircraftType: 'B738',
+        origin: 'SFO',
+        originCity: 'San Francisco',
+        destination: 'JFK',
+        destinationCity: 'New York',
+        altitude: 35000,
+        heading: 90,
+        speed: 450,
+        latitude: 37.7749,
+        longitude: -122.4194,
+        timestamp: Date.now(),
+        isOnGround: false
+      };
+      
+      // Try to get an aircraft image
+      let imagePath: string | null = null;
+      try {
+        const imageService = AircraftImageService.getInstance();
+        imagePath = await imageService.getImageForAircraftType(sampleFlight.aircraftType);
+      } catch (e) {
+        console.log('Could not get aircraft image:', e);
+      }
+      
+      // Show notification
+      const notificationId = await notificationService.showFlightNotification(sampleFlight, imagePath);
+      
+      DevToast.show(`Test notification sent: ${notificationId}`);
+      
+      // Show a toast with the notification's action buttons
+      setTimeout(() => {
+        DevToast.show('Check notification for action buttons: View Details, Flight History, Dismiss');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error testing notification:', error);
+      DevToast.show(`Error showing notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }
