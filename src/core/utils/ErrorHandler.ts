@@ -56,12 +56,17 @@ export class ErrorHandler {
     const errorType = error.constructor.name;
     const formattedMessage = this.formatErrorMessage(error);
     
-    // Safely get stack trace - might be undefined in Hermes
-    let errorStack: string | undefined;
-    try {
-      errorStack = error.stack;
-    } catch (e) {
-      errorStack = `<stack trace unavailable: ${e}>`;
+    // Get stack trace - use safeGetStack for AppError instances
+    let errorStack: string;
+    if (error instanceof AppError) {
+      errorStack = error.safeGetStack();
+    } else {
+      // For non-AppError instances, use a safe access pattern
+      try {
+        errorStack = error.stack || `${error.name || 'Error'}: ${error.message}`;
+      } catch (e) {
+        errorStack = `${error.name || 'Error'}: ${error.message} (stack unavailable)`;
+      }
     }
 
     this.logger.error(formattedMessage, {
@@ -132,7 +137,7 @@ export class ErrorHandler {
     }
 
     if (error instanceof Error) {
-      return new AppError(error.message);
+      return new AppError(error.message, error);
     }
 
     if (typeof error === 'string') {
