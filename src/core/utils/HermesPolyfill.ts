@@ -22,6 +22,26 @@ Object.defineProperty = function customDefineProperty(obj: any, prop: string, de
   }
 };
 
+// Fix for Error.stack getter in Hermes
+// This addresses the "Error.stack getter called with an invalid receiver" issue
+if (Error.prototype && typeof Error.prototype.stack === 'undefined') {
+  Object.defineProperty(Error.prototype, 'stack', {
+    configurable: true,
+    enumerable: false,
+    get: function() {
+      try {
+        // Return a fallback string with error name and message
+        return `${this.name || 'Error'}: ${this.message || ''}`;
+      } catch (e) {
+        console.warn('[HermesPolyfill] Error accessing stack property', e);
+        return '';
+      }
+    }
+  });
+  
+  console.info('[HermesPolyfill] Added Error.stack getter polyfill');
+}
+
 // Export dummy object to force import of this file
 export const hermesPolyfill = {
   applied: true

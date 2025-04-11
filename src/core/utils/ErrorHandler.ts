@@ -16,8 +16,8 @@ import { Logger } from './Logger';
 export class ErrorHandler {
   private logger: Logger;
 
-  constructor(logger: Logger) {
-    this.logger = logger;
+  constructor(logger?: Logger) {
+    this.logger = logger || new Logger('ErrorHandler');
   }
 
   /**
@@ -55,10 +55,18 @@ export class ErrorHandler {
   public logError(error: Error, context?: Record<string, any>): void {
     const errorType = error.constructor.name;
     const formattedMessage = this.formatErrorMessage(error);
+    
+    // Safely get stack trace - might be undefined in Hermes
+    let errorStack: string | undefined;
+    try {
+      errorStack = error.stack;
+    } catch (e) {
+      errorStack = `<stack trace unavailable: ${e}>`;
+    }
 
     this.logger.error(formattedMessage, {
       errorType,
-      errorStack: error.stack,
+      errorStack,
       ...context,
     });
   }
